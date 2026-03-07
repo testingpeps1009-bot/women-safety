@@ -21,8 +21,7 @@
     .card.green .val{color:#00b894}
     .unit{font-size:13px;color:#aaa;margin-left:4px}
     .loccard{background:#16213e;border-radius:12px;padding:14px;border-left:4px solid #0984e3;margin-bottom:12px}
-    .loccard .label{color:#aaa;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
-    .locval{font-size:13px;color:#0984e3;word-break:break-all}
+    .locval{font-size:13px;color:#0984e3;word-break:break-all;margin-top:6px}
     .gps-tip{font-size:11px;color:#aaa;text-align:center;margin-bottom:12px}
     .sos-btn{width:100%;padding:22px;background:#e94560;color:white;border:none;border-radius:12px;
              font-size:22px;font-weight:bold;letter-spacing:2px;cursor:pointer;margin-bottom:10px;
@@ -33,16 +32,22 @@
     .log{background:#16213e;border-radius:12px;padding:14px;max-height:180px;overflow-y:auto}
     .log-title{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
     .log-item{font-size:12px;padding:5px 0;border-bottom:1px solid #0f3460;color:#ddd}
-    .log-item:last-child{border:none}
     .ts{font-size:10px;color:#555;margin-bottom:14px;text-align:center}
     .info{background:#0f3460;border-radius:8px;padding:8px 12px;font-size:12px;
           color:#74b9ff;margin-bottom:10px;display:none;text-align:center}
+    .proxy-warn{background:#2d1b00;border:1px solid #fdcb6e;border-radius:8px;
+                padding:10px;font-size:12px;color:#fdcb6e;margin-bottom:12px;display:none}
   </style>
 </head>
 <body>
 
 <h1>🛡️ WOMEN SAFETY</h1>
 <p class="sub">Real-time monitoring dashboard</p>
+
+<div id="proxyWarn" class="proxy-warn">
+  ⚠️ Set your Netlify URL below before using!<br>
+  Replace <b>YOUR-SITE</b> in the JS with your Netlify site name.
+</div>
 
 <div id="statusBox" class="status">✅ Status: Normal</div>
 <div id="infoBox" class="info"></div>
@@ -66,7 +71,6 @@
 
 <button class="sos-btn" onclick="triggerSOS()">🆘 SOS EMERGENCY</button>
 <button class="clear-btn" onclick="clearAlert()">✅ Clear Alert</button>
-
 <div class="ts" id="lastUpdate">Last update: --</div>
 
 <div class="log">
@@ -75,10 +79,10 @@
 </div>
 
 <script type="module">
-import { initializeApp }                       from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getDatabase, ref, onValue, set }      from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { initializeApp }                  from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-// ── Firebase ─────────────────────────────────────────────────
+// ── Firebase ──────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey:      "AIzaSyAfIZ0xR3pzZz_uXHbTSLL_cm1S6KjTwxc",
   authDomain:  "women-safety-device-89b8e.firebaseapp.com",
@@ -88,16 +92,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
-// ── Twilio ────────────────────────────────────────────────────
-// Twilio does NOT allow direct browser fetch due to CORS.
-// Instead we use their verified workaround:
-// POST to a Twilio-provided CORS-enabled endpoint using no-cors
-// BUT: the only truly reliable browser→Twilio method is XMLHttpRequest
-// with credentials encoded in the URL (Twilio supports HTTP Basic Auth in URL)
-const TWILIO_SID   = "ACcc036f70be02d574426f134d8d5c0afd";
-const TWILIO_TOKEN = "e4da909f793878dc0fc414f90c20dd36";
-const TWILIO_FROM  = "+19789513308";
-const TWILIO_TO    = "+919384210599";
+// ── ★ SET YOUR NETLIFY URL HERE after deploying ───────────────
+// Example: "https://my-safety-app.netlify.app/.netlify/functions/send-sms"
+const SMS_PROXY_URL = "https://69abc4f78dc1ec0727109805--gentle-tapioca-5a7727.netlify.app/.netlify/functions/send-sms";
 
 // ── State ─────────────────────────────────────────────────────
 let curLat = null, curLng = null;
@@ -105,7 +102,11 @@ let curHR = "--", curTemp = "--";
 const lastSMS = {};
 const SMS_CD  = 30000;
 
-// ── Info box helper ───────────────────────────────────────────
+// Check if proxy URL is set
+if (SMS_PROXY_URL.includes("YOUR-SITE")) {
+  document.getElementById("proxyWarn").style.display = "block";
+}
+
 function showInfo(msg, color="#74b9ff") {
   const el = document.getElementById("infoBox");
   el.textContent = msg;
@@ -114,7 +115,6 @@ function showInfo(msg, color="#74b9ff") {
   setTimeout(() => el.style.display = "none", 6000);
 }
 
-// ── Log helper ────────────────────────────────────────────────
 function addLog(msg) {
   const el = document.getElementById("logList");
   if (el.children[0]?.style.color === "rgb(85, 85, 85)") el.innerHTML = "";
@@ -125,72 +125,47 @@ function addLog(msg) {
   while (el.children.length > 30) el.removeChild(el.lastChild);
 }
 
-// ── Send SMS using XMLHttpRequest (avoids CORS preflight) ─────
-function sendSMS(alertType, hr, temp) {
+// ── Send SMS via Netlify proxy ────────────────────────────────
+async function sendSMS(alertType, hr, temp) {
   const now = Date.now();
   if (lastSMS[alertType] && now - lastSMS[alertType] < SMS_CD) {
-    addLog("⏳ SMS cooldown active for " + alertType);
+    addLog("⏳ Cooldown — SMS skipped");
     return;
   }
   lastSMS[alertType] = now;
 
-  let msgText = "";
-  if      (alertType === "sos")        msgText = "SOS EMERGENCY! ";
-  else if (alertType === "threat")     msgText = "THREAT DETECTED! Someone approaching! ";
-  else if (alertType === "tempAlert")  msgText = "HIGH TEMPERATURE ALERT! ";
-  else if (alertType === "heartAlert") msgText = "ABNORMAL HEART RATE! ";
+  let msg = "";
+  if      (alertType === "sos")        msg = "SOS EMERGENCY! ";
+  else if (alertType === "threat")     msg = "THREAT DETECTED! Someone approaching! ";
+  else if (alertType === "tempAlert")  msg = "HIGH TEMPERATURE ALERT! ";
+  else if (alertType === "heartAlert") msg = "ABNORMAL HEART RATE! ";
+  msg += "HR: " + hr + " BPM, Temp: " + temp + "C";
+  if (curLat && curLng) msg += ". Location: https://maps.google.com/?q=" + curLat + "," + curLng;
 
-  msgText += "HR: " + hr + " BPM, Temp: " + temp + "C";
-  if (curLat && curLng) {
-    msgText += ", Location: https://maps.google.com/?q=" + curLat + "," + curLng;
-  }
-
-  // Build POST body manually
-  const body = "To=" + encodeURIComponent(TWILIO_TO)
-             + "&From=" + encodeURIComponent(TWILIO_FROM)
-             + "&Body=" + encodeURIComponent(msgText);
-
-  const url = "https://api.twilio.com/2010-04-01/Accounts/" + TWILIO_SID + "/Messages.json";
-  const creds = btoa(TWILIO_SID + ":" + TWILIO_TOKEN);
-
-  // Use XMLHttpRequest — handles Basic Auth correctly across browsers
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", url, true);
-  xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-  xhr.setRequestHeader("Authorization", "Basic " + creds);
-
-  xhr.onload = function() {
-    if (xhr.status === 201) {
+  try {
+    const res = await fetch(SMS_PROXY_URL, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ message: msg }),
+    });
+    const data = await res.json();
+    if (res.ok && data.sid) {
       addLog("📱 SMS sent: " + alertType.toUpperCase());
       showInfo("📱 SMS sent to emergency contact!", "#00b894");
     } else {
-      // Parse Twilio error message
-      let errMsg = "Status " + xhr.status;
-      try {
-        const j = JSON.parse(xhr.responseText);
-        errMsg = j.message || errMsg;
-      } catch(e) {}
-      addLog("❌ SMS failed: " + errMsg);
-      showInfo("❌ SMS failed: " + errMsg, "#e94560");
-      console.error("Twilio response:", xhr.responseText);
+      addLog("❌ SMS failed: " + (data.message || res.status));
+      showInfo("❌ SMS failed: " + (data.message || res.status), "#e94560");
     }
-  };
-
-  xhr.onerror = function() {
-    // CORS block — fallback: open SMS app on phone
-    addLog("⚠️ Browser blocked Twilio — opening SMS app");
-    showInfo("⚠️ Opening SMS app as fallback", "#fdcb6e");
-    const smsBody = encodeURIComponent(msgText);
-    window.location.href = "sms:" + TWILIO_TO + "?body=" + smsBody;
-  };
-
-  xhr.send(body);
+  } catch(e) {
+    addLog("❌ Network error: " + e.message);
+    showInfo("❌ Network error", "#e94560");
+  }
 }
 
 // ── GPS ───────────────────────────────────────────────────────
 function startGPS() {
   if (!navigator.geolocation) {
-    document.getElementById("locVal").textContent = "GPS not supported in this browser";
+    document.getElementById("locVal").textContent = "GPS not supported";
     return;
   }
   navigator.geolocation.watchPosition(
@@ -207,7 +182,7 @@ function startGPS() {
     },
     err => {
       document.getElementById("locVal").textContent = "GPS error: " + err.message;
-      document.getElementById("gpsTip").textContent = "⚠️ Allow location in browser settings";
+      document.getElementById("gpsTip").textContent = "⚠️ Allow location permission in browser";
     },
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
   );
@@ -233,7 +208,6 @@ const alertLabels = {
   tempAlert:  "🌡️ HIGH TEMP ALERT!",
   heartAlert: "💓 HEART RATE ALERT!",
 };
-
 Object.keys(alertLabels).forEach(alertType => {
   onValue(ref(db, "/alerts/" + alertType), snap => {
     if (snap.val() !== true) return;
@@ -258,10 +232,8 @@ window.triggerSOS = function() {
 
 // ── Clear ─────────────────────────────────────────────────────
 window.clearAlert = function() {
-  set(ref(db, "/alerts/sos"),        false);
-  set(ref(db, "/alerts/threat"),     false);
-  set(ref(db, "/alerts/tempAlert"),  false);
-  set(ref(db, "/alerts/heartAlert"), false);
+  ["sos","threat","tempAlert","heartAlert"].forEach(k =>
+    set(ref(db, "/alerts/" + k), false));
   document.getElementById("statusBox").textContent = "✅ Status: Normal";
   document.getElementById("statusBox").className   = "status";
   addLog("✅ Alert cleared");
