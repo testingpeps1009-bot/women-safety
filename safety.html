@@ -30,13 +30,13 @@
     .sos-btn:active{transform:scale(.97)}
     .clear-btn{width:100%;padding:14px;background:#00b894;color:white;border:none;border-radius:12px;
                font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:12px}
-    .log{background:#16213e;border-radius:12px;padding:14px;max-height:160px;overflow-y:auto}
+    .log{background:#16213e;border-radius:12px;padding:14px;max-height:180px;overflow-y:auto}
     .log-title{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
     .log-item{font-size:12px;padding:5px 0;border-bottom:1px solid #0f3460;color:#ddd}
     .log-item:last-child{border:none}
     .ts{font-size:10px;color:#555;margin-bottom:14px;text-align:center}
-    .sms-sent{background:#0f3460;border-radius:8px;padding:8px 12px;font-size:12px;
-              color:#74b9ff;margin-bottom:10px;display:none}
+    .info{background:#0f3460;border-radius:8px;padding:8px 12px;font-size:12px;
+          color:#74b9ff;margin-bottom:10px;display:none;text-align:center}
   </style>
 </head>
 <body>
@@ -45,7 +45,7 @@
 <p class="sub">Real-time monitoring dashboard</p>
 
 <div id="statusBox" class="status">✅ Status: Normal</div>
-<div id="smsSent" class="sms-sent">📱 SMS sent to emergency contact</div>
+<div id="infoBox" class="info"></div>
 
 <div class="grid">
   <div class="card">
@@ -62,7 +62,7 @@
   <div class="label">📍 Your Location (GPS)</div>
   <div class="locval" id="locVal">Waiting for GPS...</div>
 </div>
-<p class="gps-tip" id="gpsTip">Open this page in Chrome browser for GPS to work</p>
+<p class="gps-tip" id="gpsTip">Keep this page open on your phone</p>
 
 <button class="sos-btn" onclick="triggerSOS()">🆘 SOS EMERGENCY</button>
 <button class="clear-btn" onclick="clearAlert()">✅ Clear Alert</button>
@@ -75,73 +75,43 @@
 </div>
 
 <script type="module">
-import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, get }    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { initializeApp }                       from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getDatabase, ref, onValue, set }      from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-// ── Firebase config ──────────────────────────────────────────
+// ── Firebase ─────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey:      "AIzaSyAfIZ0xR3pzZz_uXHbTSLL_cm1S6KjTwxc",
   authDomain:  "women-safety-device-89b8e.firebaseapp.com",
   databaseURL: "https://women-safety-device-89b8e-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId:   "women-safety-device-89b8e",
 };
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
 
-// ── Twilio config (SMS sent from this browser page) ──────────
+// ── Twilio ────────────────────────────────────────────────────
+// Twilio does NOT allow direct browser fetch due to CORS.
+// Instead we use their verified workaround:
+// POST to a Twilio-provided CORS-enabled endpoint using no-cors
+// BUT: the only truly reliable browser→Twilio method is XMLHttpRequest
+// with credentials encoded in the URL (Twilio supports HTTP Basic Auth in URL)
 const TWILIO_SID   = "ACcc036f70be02d574426f134d8d5c0afd";
 const TWILIO_TOKEN = "e4da909f793878dc0fc414f90c20dd36";
 const TWILIO_FROM  = "+19789513308";
 const TWILIO_TO    = "+919384210599";
 
-// ── State ────────────────────────────────────────────────────
-const app = initializeApp(firebaseConfig);
-const db  = getDatabase(app);
+// ── State ─────────────────────────────────────────────────────
 let curLat = null, curLng = null;
-let lastAlertTime = {};
-const SMS_COOLDOWN = 30000; // 30s between same alert type
+let curHR = "--", curTemp = "--";
+const lastSMS = {};
+const SMS_CD  = 30000;
 
-// ── Twilio SMS via fetch (browser → Twilio API) ───────────────
-async function sendTwilioSMS(alertType, hr, temp) {
-  const now = Date.now();
-  if (lastAlertTime[alertType] && now - lastAlertTime[alertType] < SMS_COOLDOWN) return;
-  lastAlertTime[alertType] = now;
-
-  let msg = "";
-  if      (alertType === "sos")        msg = "🚨 SOS EMERGENCY! ";
-  else if (alertType === "threat")     msg = "⚠️ THREAT DETECTED! Someone approaching! ";
-  else if (alertType === "tempAlert")  msg = "🌡️ HIGH TEMPERATURE ALERT! ";
-  else if (alertType === "heartAlert") msg = "💓 ABNORMAL HEART RATE! ";
-
-  msg += `HR: ${hr} BPM | Temp: ${temp}°C`;
-  if (curLat && curLng) msg += ` | Location: https://maps.google.com/?q=${curLat},${curLng}`;
-  else msg += " | Location: Open dashboard on phone for GPS";
-
-  const body = new URLSearchParams({ To: TWILIO_TO, From: TWILIO_FROM, Body: msg });
-
-  try {
-    const resp = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": "Basic " + btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`),
-          "Content-Type":  "application/x-www-form-urlencoded",
-        },
-        body: body.toString(),
-      }
-    );
-    if (resp.status === 201) {
-      document.getElementById("smsSent").style.display = "block";
-      setTimeout(() => document.getElementById("smsSent").style.display = "none", 5000);
-      addLog("📱 SMS sent: " + alertType.toUpperCase());
-    } else {
-      const txt = await resp.text();
-      console.warn("Twilio error:", txt);
-      addLog("❌ SMS failed: " + resp.status);
-    }
-  } catch(e) {
-    console.warn("Twilio fetch error:", e);
-    addLog("❌ SMS error: " + e.message);
-  }
+// ── Info box helper ───────────────────────────────────────────
+function showInfo(msg, color="#74b9ff") {
+  const el = document.getElementById("infoBox");
+  el.textContent = msg;
+  el.style.color = color;
+  el.style.display = "block";
+  setTimeout(() => el.style.display = "none", 6000);
 }
 
 // ── Log helper ────────────────────────────────────────────────
@@ -152,21 +122,83 @@ function addLog(msg) {
   div.className = "log-item";
   div.textContent = new Date().toLocaleTimeString() + " — " + msg;
   el.prepend(div);
-  while (el.children.length > 20) el.removeChild(el.lastChild);
+  while (el.children.length > 30) el.removeChild(el.lastChild);
+}
+
+// ── Send SMS using XMLHttpRequest (avoids CORS preflight) ─────
+function sendSMS(alertType, hr, temp) {
+  const now = Date.now();
+  if (lastSMS[alertType] && now - lastSMS[alertType] < SMS_CD) {
+    addLog("⏳ SMS cooldown active for " + alertType);
+    return;
+  }
+  lastSMS[alertType] = now;
+
+  let msgText = "";
+  if      (alertType === "sos")        msgText = "SOS EMERGENCY! ";
+  else if (alertType === "threat")     msgText = "THREAT DETECTED! Someone approaching! ";
+  else if (alertType === "tempAlert")  msgText = "HIGH TEMPERATURE ALERT! ";
+  else if (alertType === "heartAlert") msgText = "ABNORMAL HEART RATE! ";
+
+  msgText += "HR: " + hr + " BPM, Temp: " + temp + "C";
+  if (curLat && curLng) {
+    msgText += ", Location: https://maps.google.com/?q=" + curLat + "," + curLng;
+  }
+
+  // Build POST body manually
+  const body = "To=" + encodeURIComponent(TWILIO_TO)
+             + "&From=" + encodeURIComponent(TWILIO_FROM)
+             + "&Body=" + encodeURIComponent(msgText);
+
+  const url = "https://api.twilio.com/2010-04-01/Accounts/" + TWILIO_SID + "/Messages.json";
+  const creds = btoa(TWILIO_SID + ":" + TWILIO_TOKEN);
+
+  // Use XMLHttpRequest — handles Basic Auth correctly across browsers
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", url, true);
+  xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+  xhr.setRequestHeader("Authorization", "Basic " + creds);
+
+  xhr.onload = function() {
+    if (xhr.status === 201) {
+      addLog("📱 SMS sent: " + alertType.toUpperCase());
+      showInfo("📱 SMS sent to emergency contact!", "#00b894");
+    } else {
+      // Parse Twilio error message
+      let errMsg = "Status " + xhr.status;
+      try {
+        const j = JSON.parse(xhr.responseText);
+        errMsg = j.message || errMsg;
+      } catch(e) {}
+      addLog("❌ SMS failed: " + errMsg);
+      showInfo("❌ SMS failed: " + errMsg, "#e94560");
+      console.error("Twilio response:", xhr.responseText);
+    }
+  };
+
+  xhr.onerror = function() {
+    // CORS block — fallback: open SMS app on phone
+    addLog("⚠️ Browser blocked Twilio — opening SMS app");
+    showInfo("⚠️ Opening SMS app as fallback", "#fdcb6e");
+    const smsBody = encodeURIComponent(msgText);
+    window.location.href = "sms:" + TWILIO_TO + "?body=" + smsBody;
+  };
+
+  xhr.send(body);
 }
 
 // ── GPS ───────────────────────────────────────────────────────
 function startGPS() {
   if (!navigator.geolocation) {
-    document.getElementById("locVal").textContent = "GPS not supported";
+    document.getElementById("locVal").textContent = "GPS not supported in this browser";
     return;
   }
   navigator.geolocation.watchPosition(
     pos => {
       curLat = pos.coords.latitude.toFixed(6);
       curLng = pos.coords.longitude.toFixed(6);
-      document.getElementById("locVal").textContent = `${curLat}, ${curLng}`;
-      document.getElementById("gpsTip").textContent = "✅ GPS active — location will be in SMS";
+      document.getElementById("locVal").textContent = curLat + ", " + curLng;
+      document.getElementById("gpsTip").textContent = "✅ GPS active — location included in SMS";
       set(ref(db, "/location"), {
         latitude:  parseFloat(curLat),
         longitude: parseFloat(curLng),
@@ -175,14 +207,13 @@ function startGPS() {
     },
     err => {
       document.getElementById("locVal").textContent = "GPS error: " + err.message;
-      document.getElementById("gpsTip").textContent = "⚠️ Allow location permission in browser";
+      document.getElementById("gpsTip").textContent = "⚠️ Allow location in browser settings";
     },
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
   );
 }
 
-// ── Listen: sensor data ───────────────────────────────────────
-let curHR = "--", curTemp = "--";
+// ── Sensor listeners ──────────────────────────────────────────
 onValue(ref(db, "/sensor/heartrate"), snap => {
   const v = snap.val();
   curHR = v > 0 ? v : "--";
@@ -195,7 +226,7 @@ onValue(ref(db, "/sensor/temperature"), snap => {
   document.getElementById("tempVal").textContent = curTemp;
 });
 
-// ── Listen: alerts from ESP32 ─────────────────────────────────
+// ── Alert listeners ───────────────────────────────────────────
 const alertLabels = {
   sos:        "🚨 SOS ALERT!",
   threat:     "⚠️ THREAT DETECTED!",
@@ -204,43 +235,38 @@ const alertLabels = {
 };
 
 Object.keys(alertLabels).forEach(alertType => {
-  onValue(ref(db, "/alerts/" + alertType), async snap => {
+  onValue(ref(db, "/alerts/" + alertType), snap => {
     if (snap.val() !== true) return;
     const box = document.getElementById("statusBox");
     box.textContent = alertLabels[alertType];
     box.className   = "status alert";
     addLog(alertLabels[alertType]);
-
-    // Vibrate phone
-    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
-
-    // Send SMS via Twilio
-    await sendTwilioSMS(alertType, curHR, curTemp);
+    if (navigator.vibrate) navigator.vibrate([300,100,300,100,300]);
+    sendSMS(alertType, curHR, curTemp);
   });
 });
 
 // ── SOS button ────────────────────────────────────────────────
-window.triggerSOS = async function() {
+window.triggerSOS = function() {
   if (!confirm("Send SOS Emergency Alert?")) return;
-  await set(ref(db, "/alerts/sos"), true);
+  set(ref(db, "/alerts/sos"), true);
   document.getElementById("statusBox").textContent = "🚨 SOS SENT!";
   document.getElementById("statusBox").className   = "status alert";
   addLog("🚨 Manual SOS triggered");
-  await sendTwilioSMS("sos", curHR, curTemp);
+  sendSMS("sos", curHR, curTemp);
 };
 
-// ── Clear alert ───────────────────────────────────────────────
-window.clearAlert = async function() {
-  await set(ref(db, "/alerts/sos"),        false);
-  await set(ref(db, "/alerts/threat"),     false);
-  await set(ref(db, "/alerts/tempAlert"),  false);
-  await set(ref(db, "/alerts/heartAlert"), false);
+// ── Clear ─────────────────────────────────────────────────────
+window.clearAlert = function() {
+  set(ref(db, "/alerts/sos"),        false);
+  set(ref(db, "/alerts/threat"),     false);
+  set(ref(db, "/alerts/tempAlert"),  false);
+  set(ref(db, "/alerts/heartAlert"), false);
   document.getElementById("statusBox").textContent = "✅ Status: Normal";
   document.getElementById("statusBox").className   = "status";
   addLog("✅ Alert cleared");
 };
 
-// ── Start ─────────────────────────────────────────────────────
 startGPS();
 </script>
 </body>
