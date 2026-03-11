@@ -1,88 +1,382 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Women Safety Device</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:Arial,sans-serif;background:#1a1a2e;color:white;min-height:100vh;padding:16px}
-    h1{text-align:center;color:#e94560;font-size:20px;letter-spacing:2px;padding:16px 0 4px}
-    .sub{text-align:center;color:#aaa;font-size:11px;margin-bottom:16px}
-    .status{text-align:center;padding:14px;border-radius:12px;font-size:15px;font-weight:bold;
-            border:2px solid #00b894;color:#00b894;margin-bottom:14px}
-    .status.alert{border-color:#e94560;color:#e94560;animation:pulse 1s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-    .card{background:#16213e;border-radius:12px;padding:16px;border-left:4px solid #e94560}
-    .card.green{border-left-color:#00b894}
-    .label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
-    .val{font-size:38px;font-weight:bold;color:#e94560}
-    .card.green .val{color:#00b894}
-    .unit{font-size:13px;color:#aaa;margin-left:4px}
-    .loccard{background:#16213e;border-radius:12px;padding:14px;border-left:4px solid #0984e3;margin-bottom:12px}
-    .locval{font-size:13px;color:#0984e3;word-break:break-all;margin-top:6px}
-    .gps-tip{font-size:11px;color:#aaa;text-align:center;margin-bottom:12px}
-    .sos-btn{width:100%;padding:22px;background:#e94560;color:white;border:none;border-radius:12px;
-             font-size:22px;font-weight:bold;letter-spacing:2px;cursor:pointer;margin-bottom:10px;
-             box-shadow:0 0 24px rgba(233,69,96,.5)}
-    .sos-btn:active{transform:scale(.97)}
-    .clear-btn{width:100%;padding:14px;background:#00b894;color:white;border:none;border-radius:12px;
-               font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:12px}
-    .log{background:#16213e;border-radius:12px;padding:14px;max-height:180px;overflow-y:auto}
-    .log-title{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-    .log-item{font-size:12px;padding:5px 0;border-bottom:1px solid #0f3460;color:#ddd}
-    .ts{font-size:10px;color:#555;margin-bottom:14px;text-align:center}
-    .info{background:#0f3460;border-radius:8px;padding:8px 12px;font-size:12px;
-          color:#74b9ff;margin-bottom:10px;display:none;text-align:center}
-    .proxy-warn{background:#2d1b00;border:1px solid #fdcb6e;border-radius:8px;
-                padding:10px;font-size:12px;color:#fdcb6e;margin-bottom:12px;display:none}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SafeGuard — Women Safety Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red:     #ff2d55;
+    --red-dim: #ff2d5522;
+    --green:   #30d158;
+    --amber:   #ffd60a;
+    --bg:      #080808;
+    --card:    #111111;
+    --border:  #1e1e1e;
+    --text:    #f5f5f7;
+    --muted:   #48484a;
+    --mono:    'DM Mono', monospace;
+    --sans:    'Syne', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0 24px;
+  }
+  .logo {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo span { color: var(--red); }
+  .live-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: blink 2s ease-in-out infinite;
+  }
+  .dot.offline { background: var(--muted); box-shadow: none; animation: none; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── Status Banner ── */
+  .status-banner {
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s;
+  }
+  .status-banner.alert {
+    background: var(--red-dim);
+    border-color: var(--red);
+    animation: shake 0.4s ease;
+  }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-6px)}
+    40%{transform:translateX(6px)}
+    60%{transform:translateX(-4px)}
+    80%{transform:translateX(4px)}
+  }
+  .status-icon { font-size: 22px; }
+  .status-text { flex:1; }
+  .status-title { font-size: 14px; font-weight: 700; }
+  .status-sub   { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top:2px; }
+
+  /* ── Vitals Grid ── */
+  .vitals {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .vital-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .vital-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .vital-card.hr::before   { background: var(--red); }
+  .vital-card.temp::before { background: var(--amber); }
+
+  .vital-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .vital-value {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+  .vital-card.hr   .vital-value { color: var(--red); }
+  .vital-card.temp .vital-value { color: var(--amber); }
+  .vital-unit {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── Info Cards ── */
+  .info-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .info-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .info-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    word-break: break-all;
+    line-height: 1.4;
+  }
+  .info-value.gps-active { color: var(--green); }
+  .info-value.gps-wait   { color: var(--muted); }
+
+  /* ── SOS Button ── */
+  .sos-wrap {
+    margin: 18px 0 10px;
+    position: relative;
+  }
+  .sos-btn {
+    width: 100%;
+    padding: 22px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    font-family: var(--sans);
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 8px 32px #ff2d5540, 0 2px 8px #ff2d5520;
+  }
+  .sos-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #ffffff18 0%, transparent 60%);
+  }
+  .sos-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px #ff2d5530; }
+  .sos-btn.sending { opacity: 0.7; pointer-events: none; }
+  .sos-hint {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Clear Button ── */
+  .clear-btn {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 16px;
+  }
+  .clear-btn:active { background: var(--border); }
+
+  /* ── Log ── */
+  .log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .log-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .log-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--border);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .log-list::-webkit-scrollbar { width: 3px; }
+  .log-list::-webkit-scrollbar-track { background: transparent; }
+  .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius:3px; }
+  .log-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+  .log-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    padding-top: 1px;
+  }
+  .log-msg { font-size: 12px; font-weight: 600; flex:1; line-height:1.3; }
+  .log-msg.ok     { color: var(--green); }
+  .log-msg.warn   { color: var(--red); }
+  .log-msg.info   { color: var(--text); }
+
+  /* ── Timestamp ── */
+  .last-update {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin: 12px 0 6px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999;
+    box-shadow: 0 8px 32px #00000080;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error   { border-color: var(--red);   color: var(--red); }
+</style>
 </head>
 <body>
 
-<h1>🛡️ WOMEN SAFETY</h1>
-<p class="sub">Real-time monitoring dashboard</p>
-
-<div id="proxyWarn" class="proxy-warn">
-  ⚠️ Set your Netlify URL below before using!<br>
-  Replace <b>YOUR-SITE</b> in the JS with your Netlify site name.
-</div>
-
-<div id="statusBox" class="status">✅ Status: Normal</div>
-<div id="infoBox" class="info"></div>
-
-<div class="grid">
-  <div class="card">
-    <div class="label">❤️ Heart Rate</div>
-    <span class="val" id="hrVal">--</span><span class="unit">BPM</span>
-  </div>
-  <div class="card green">
-    <div class="label">🌡️ Temperature</div>
-    <span class="val" id="tempVal">--</span><span class="unit">°C</span>
+<!-- Header -->
+<div class="header">
+  <div class="logo">Safe<span>Guard</span></div>
+  <div class="live-dot">
+    <div class="dot" id="liveDot"></div>
+    <span id="liveLabel">LIVE</span>
   </div>
 </div>
 
-<div class="loccard">
-  <div class="label">📍 Your Location (GPS)</div>
-  <div class="locval" id="locVal">Waiting for GPS...</div>
+<!-- Status Banner -->
+<div class="status-banner" id="statusBanner">
+  <div class="status-icon" id="statusIcon">🟢</div>
+  <div class="status-text">
+    <div class="status-title" id="statusTitle">All Systems Normal</div>
+    <div class="status-sub"  id="statusSub">Monitoring active</div>
+  </div>
 </div>
-<p class="gps-tip" id="gpsTip">Keep this page open on your phone</p>
 
-<button class="sos-btn" onclick="triggerSOS()">🆘 SOS EMERGENCY</button>
-<button class="clear-btn" onclick="clearAlert()">✅ Clear Alert</button>
-<div class="ts" id="lastUpdate">Last update: --</div>
-
-<div class="log">
-  <div class="log-title">Alert History</div>
-  <div id="logList"><div class="log-item" style="color:#555">No alerts yet</div></div>
+<!-- Vitals -->
+<div class="vitals">
+  <div class="vital-card hr">
+    <div class="vital-label">❤ Heart Rate</div>
+    <div class="vital-value" id="hrVal">--</div>
+    <div class="vital-unit">BPM</div>
+  </div>
+  <div class="vital-card temp">
+    <div class="vital-label">◈ Temperature</div>
+    <div class="vital-value" id="tempVal">--</div>
+    <div class="vital-unit">°C</div>
+  </div>
 </div>
+
+<!-- GPS -->
+<div class="info-card">
+  <div class="info-label">◎ Location</div>
+  <div class="info-value gps-wait" id="gpsVal">Waiting for GPS...</div>
+</div>
+
+<!-- SOS -->
+<div class="sos-wrap">
+  <button class="sos-btn" id="sosBtn" onclick="triggerSOS()">🆘 &nbsp;SOS EMERGENCY</button>
+  <div class="sos-hint">Hold to send emergency alert + SMS</div>
+</div>
+
+<!-- Clear -->
+<button class="clear-btn" onclick="clearAlert()">✓ &nbsp;Clear Alert</button>
+
+<!-- Last update -->
+<div class="last-update" id="lastUpdate">Waiting for data...</div>
+
+<!-- Log -->
+<div class="log-header">
+  <div class="log-title">Activity Log</div>
+  <div class="log-count" id="logCount">0</div>
+</div>
+<div class="log-list" id="logList"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
 <script type="module">
 import { initializeApp }                  from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-// ── Firebase ──────────────────────────────────────────────────
+// ── Firebase ──────────────────────────────────────────────
 const firebaseConfig = {
   apiKey:      "AIzaSyAfIZ0xR3pzZz_uXHbTSLL_cm1S6KjTwxc",
   authDomain:  "women-safety-device-89b8e.firebaseapp.com",
@@ -92,154 +386,170 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
-// ── ★ SET YOUR NETLIFY URL HERE after deploying ───────────────
-// Example: "https://my-safety-app.netlify.app/.netlify/functions/send-sms"
-const SMS_PROXY_URL = "https://69abcc2f6348a91a3d39e924--neon-creponne-3eab8c.netlify.app//.netlify/functions/send-sms";
+// ── Twilio ────────────────────────────────────────────────
+const TW_SID   = "ACcc036f70be02d574426f134d8d5c0afd";
+const TW_TOKEN = "32bd44819f4912bfd4a7802b59ec3e12";
+const TW_FROM  = "+19789513308";
+const TW_TO    = "+919360856505";
 
-// ── State ─────────────────────────────────────────────────────
-let curLat = null, curLng = null;
-let curHR = "--", curTemp = "--";
-const lastSMS = {};
-const SMS_CD  = 30000;
+// ── State ─────────────────────────────────────────────────
+let curLat=null, curLng=null, curHR="--", curTemp="--";
+const smsCooldown={};
+const SMS_CD=30000;
+let logCount=0;
 
-// Check if proxy URL is set
-if (SMS_PROXY_URL.includes("YOUR-SITE")) {
-  document.getElementById("proxyWarn").style.display = "block";
-}
-
-function showInfo(msg, color="#74b9ff") {
-  const el = document.getElementById("infoBox");
+// ── Toast ─────────────────────────────────────────────────
+function toast(msg, type="info") {
+  const el = document.getElementById("toast");
   el.textContent = msg;
-  el.style.color = color;
-  el.style.display = "block";
-  setTimeout(() => el.style.display = "none", 6000);
+  el.className = "toast show " + type;
+  setTimeout(()=>el.className="toast", 3000);
 }
 
-function addLog(msg) {
-  const el = document.getElementById("logList");
-  if (el.children[0]?.style.color === "rgb(85, 85, 85)") el.innerHTML = "";
-  const div = document.createElement("div");
-  div.className = "log-item";
-  div.textContent = new Date().toLocaleTimeString() + " — " + msg;
-  el.prepend(div);
-  while (el.children.length > 30) el.removeChild(el.lastChild);
+// ── Log ───────────────────────────────────────────────────
+function addLog(msg, type="info") {
+  const list = document.getElementById("logList");
+  const now  = new Date().toLocaleTimeString("en-IN",{hour12:false,hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const item = document.createElement("div");
+  item.className = "log-item";
+  item.innerHTML = `<div class="log-time">${now}</div><div class="log-msg ${type}">${msg}</div>`;
+  list.prepend(item);
+  while(list.children.length > 25) list.removeChild(list.lastChild);
+  logCount++;
+  document.getElementById("logCount").textContent = logCount;
 }
 
-// ── Send SMS via Netlify proxy ────────────────────────────────
-async function sendSMS(alertType, hr, temp) {
+// ── Twilio SMS via XMLHttpRequest ─────────────────────────
+function sendTwilioSMS(alertType) {
   const now = Date.now();
-  if (lastSMS[alertType] && now - lastSMS[alertType] < SMS_CD) {
-    addLog("⏳ Cooldown — SMS skipped");
-    return;
+  if (smsCooldown[alertType] && now - smsCooldown[alertType] < SMS_CD) {
+    addLog("SMS cooldown active", "info"); return;
   }
-  lastSMS[alertType] = now;
+  smsCooldown[alertType] = now;
 
   let msg = "";
-  if      (alertType === "sos")        msg = "SOS EMERGENCY! ";
-  else if (alertType === "threat")     msg = "THREAT DETECTED! Someone approaching! ";
-  else if (alertType === "tempAlert")  msg = "HIGH TEMPERATURE ALERT! ";
-  else if (alertType === "heartAlert") msg = "ABNORMAL HEART RATE! ";
-  msg += "HR: " + hr + " BPM, Temp: " + temp + "C";
-  if (curLat && curLng) msg += ". Location: https://maps.google.com/?q=" + curLat + "," + curLng;
+  if      (alertType==="sos")        msg = "SOS EMERGENCY! ";
+  else if (alertType==="threat")     msg = "THREAT DETECTED! Someone approaching! ";
+  else if (alertType==="tamper")     msg = "TAMPER ALERT! Device removed! ";
+  else if (alertType==="tempAlert")  msg = "HIGH TEMPERATURE ALERT! ";
+  else if (alertType==="heartAlert") msg = "ABNORMAL HEART RATE! ";
+  msg += `HR: ${curHR} BPM, Temp: ${curTemp}C`;
+  if (curLat && curLng) msg += `. Location: https://maps.google.com/?q=${curLat},${curLng}`;
 
-  try {
-    const res = await fetch(SMS_PROXY_URL, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ message: msg }),
-    });
-    const data = await res.json();
-    if (res.ok && data.sid) {
-      addLog("📱 SMS sent: " + alertType.toUpperCase());
-      showInfo("📱 SMS sent to emergency contact!", "#00b894");
+  const body = new URLSearchParams({ To: TW_TO, From: TW_FROM, Body: msg });
+  const creds = btoa(`${TW_SID}:${TW_TOKEN}`);
+  const url   = `https://api.twilio.com/2010-04-01/Accounts/${TW_SID}/Messages.json`;
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", url, true);
+  xhr.setRequestHeader("Content-Type",  "application/x-www-form-urlencoded");
+  xhr.setRequestHeader("Authorization", "Basic " + creds);
+
+  xhr.onload = () => {
+    if (xhr.status === 201) {
+      addLog("📱 SMS sent → " + TW_TO, "ok");
+      toast("📱 SMS sent!", "success");
     } else {
-      addLog("❌ SMS failed: " + (data.message || res.status));
-      showInfo("❌ SMS failed: " + (data.message || res.status), "#e94560");
+      let err = "Error " + xhr.status;
+      try { err = JSON.parse(xhr.responseText).message || err; } catch(e){}
+      addLog("❌ SMS failed: " + err, "warn");
+      toast("❌ " + err, "error");
     }
-  } catch(e) {
-    addLog("❌ Network error: " + e.message);
-    showInfo("❌ Network error", "#e94560");
-  }
+  };
+  xhr.onerror = () => { addLog("❌ SMS network error", "warn"); };
+  xhr.send(body.toString());
 }
 
-// ── GPS ───────────────────────────────────────────────────────
-function startGPS() {
-  if (!navigator.geolocation) {
-    document.getElementById("locVal").textContent = "GPS not supported";
-    return;
-  }
-  navigator.geolocation.watchPosition(
-    pos => {
-      curLat = pos.coords.latitude.toFixed(6);
-      curLng = pos.coords.longitude.toFixed(6);
-      document.getElementById("locVal").textContent = curLat + ", " + curLng;
-      document.getElementById("gpsTip").textContent = "✅ GPS active — location included in SMS";
-      set(ref(db, "/location"), {
-        latitude:  parseFloat(curLat),
-        longitude: parseFloat(curLng),
-        updatedAt: Date.now(),
-      });
-    },
-    err => {
-      document.getElementById("locVal").textContent = "GPS error: " + err.message;
-      document.getElementById("gpsTip").textContent = "⚠️ Allow location permission in browser";
-    },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
-  );
-}
+// ── GPS ───────────────────────────────────────────────────
+navigator.geolocation?.watchPosition(
+  pos => {
+    curLat = pos.coords.latitude.toFixed(6);
+    curLng = pos.coords.longitude.toFixed(6);
+    const el = document.getElementById("gpsVal");
+    el.textContent = `${curLat}, ${curLng}`;
+    el.className   = "info-value gps-active";
+    set(ref(db, "/location"), {
+      latitude:  parseFloat(curLat),
+      longitude: parseFloat(curLng),
+      updatedAt: Date.now(),
+    });
+  },
+  err => {
+    document.getElementById("gpsVal").textContent = "GPS denied — " + err.message;
+  },
+  { enableHighAccuracy:true, timeout:15000, maximumAge:5000 }
+);
 
-// ── Sensor listeners ──────────────────────────────────────────
+// ── Sensor listeners ──────────────────────────────────────
 onValue(ref(db, "/sensor/heartrate"), snap => {
   const v = snap.val();
   curHR = v > 0 ? v : "--";
   document.getElementById("hrVal").textContent = curHR;
-  document.getElementById("lastUpdate").textContent = "Last update: " + new Date().toLocaleTimeString();
+  document.getElementById("lastUpdate").textContent =
+    "Last sync " + new Date().toLocaleTimeString("en-IN",{hour12:false});
+  document.getElementById("liveDot").className = "dot";
+  document.getElementById("liveLabel").textContent = "LIVE";
 });
+
 onValue(ref(db, "/sensor/temperature"), snap => {
   const v = snap.val();
   curTemp = v > 0 ? parseFloat(v).toFixed(1) : "--";
   document.getElementById("tempVal").textContent = curTemp;
 });
 
-// ── Alert listeners ───────────────────────────────────────────
-const alertLabels = {
-  sos:        "🚨 SOS ALERT!",
-  threat:     "⚠️ THREAT DETECTED!",
-  tempAlert:  "🌡️ HIGH TEMP ALERT!",
-  heartAlert: "💓 HEART RATE ALERT!",
+// ── Alert listeners ───────────────────────────────────────
+const alertMap = {
+  sos:        { icon:"🚨", title:"SOS ALERT",           sub:"Emergency triggered" },
+  threat:     { icon:"⚠️",  title:"THREAT DETECTED",     sub:"Sudden approach detected" },
+  tamper:     { icon:"🔓", title:"TAMPER ALERT",         sub:"Device may be removed" },
+  tempAlert:  { icon:"🌡️", title:"HIGH TEMPERATURE",     sub:"Body temp dangerously high" },
+  heartAlert: { icon:"💓", title:"ABNORMAL HEART RATE",  sub:"HR outside safe range" },
 };
-Object.keys(alertLabels).forEach(alertType => {
-  onValue(ref(db, "/alerts/" + alertType), snap => {
+
+Object.keys(alertMap).forEach(key => {
+  onValue(ref(db, "/alerts/" + key), snap => {
     if (snap.val() !== true) return;
-    const box = document.getElementById("statusBox");
-    box.textContent = alertLabels[alertType];
-    box.className   = "status alert";
-    addLog(alertLabels[alertType]);
-    if (navigator.vibrate) navigator.vibrate([300,100,300,100,300]);
-    sendSMS(alertType, curHR, curTemp);
+    const a = alertMap[key];
+    const banner = document.getElementById("statusBanner");
+    banner.className = "status-banner alert";
+    document.getElementById("statusIcon").textContent  = a.icon;
+    document.getElementById("statusTitle").textContent = a.title;
+    document.getElementById("statusSub").textContent   = a.sub;
+    addLog(a.icon + " " + a.title, "warn");
+    if (navigator.vibrate) navigator.vibrate([300,100,300,100,600]);
+    sendTwilioSMS(key);
   });
 });
 
-// ── SOS button ────────────────────────────────────────────────
+// ── SOS Button ────────────────────────────────────────────
 window.triggerSOS = function() {
   if (!confirm("Send SOS Emergency Alert?")) return;
+  const btn = document.getElementById("sosBtn");
+  btn.textContent = "⏳  Sending...";
+  btn.classList.add("sending");
   set(ref(db, "/alerts/sos"), true);
-  document.getElementById("statusBox").textContent = "🚨 SOS SENT!";
-  document.getElementById("statusBox").className   = "status alert";
-  addLog("🚨 Manual SOS triggered");
-  sendSMS("sos", curHR, curTemp);
+  sendTwilioSMS("sos");
+  setTimeout(() => {
+    btn.innerHTML = "🆘 &nbsp;SOS EMERGENCY";
+    btn.classList.remove("sending");
+  }, 3000);
 };
 
-// ── Clear ─────────────────────────────────────────────────────
+// ── Clear ─────────────────────────────────────────────────
 window.clearAlert = function() {
-  ["sos","threat","tempAlert","heartAlert"].forEach(k =>
-    set(ref(db, "/alerts/" + k), false));
-  document.getElementById("statusBox").textContent = "✅ Status: Normal";
-  document.getElementById("statusBox").className   = "status";
-  addLog("✅ Alert cleared");
+  ["sos","threat","tamper","tempAlert","heartAlert"].forEach(k =>
+    set(ref(db, "/alerts/" + k), false)
+  );
+  const banner = document.getElementById("statusBanner");
+  banner.className = "status-banner";
+  document.getElementById("statusIcon").textContent  = "🟢";
+  document.getElementById("statusTitle").textContent = "All Systems Normal";
+  document.getElementById("statusSub").textContent   = "Monitoring active";
+  addLog("✓ Alert cleared", "ok");
+  toast("Alert cleared", "success");
 };
 
-startGPS();
+addLog("Dashboard connected", "ok");
 </script>
 </body>
 </html>
