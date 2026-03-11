@@ -2,381 +2,188 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>SafeGuard — Women Safety Monitor</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SafeGuard</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --red:     #ff2d55;
-    --red-dim: #ff2d5522;
-    --green:   #30d158;
-    --amber:   #ffd60a;
-    --bg:      #080808;
-    --card:    #111111;
-    --border:  #1e1e1e;
-    --text:    #f5f5f7;
-    --muted:   #48484a;
-    --mono:    'DM Mono', monospace;
-    --sans:    'Syne', sans-serif;
+    --red:       #ef233c;
+    --red-soft:  #fff0f2;
+    --green:     #2dc653;
+    --green-soft:#f0fdf4;
+    --amber:     #f4a118;
+    --amber-soft:#fffbeb;
+    --blue:      #3a86ff;
+    --blue-soft: #eff6ff;
+    --bg:        #f8f9fc;
+    --card:      #ffffff;
+    --border:    #e8eaef;
+    --text:      #0d0d0d;
+    --sub:       #6b7280;
+    --font:      'Plus Jakarta Sans', sans-serif;
   }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;max-width:420px;margin:0 auto;padding:0 0 48px}
 
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  /* Top Bar */
+  .topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand-icon{width:34px;height:34px;background:var(--red);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .brand-name{font-size:17px;font-weight:800;letter-spacing:-0.4px}
+  .brand-name span{color:var(--red)}
+  .live-pill{display:flex;align-items:center;gap:5px;background:var(--green-soft);border:1px solid #bbf7d0;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--green)}
+  .live-pill.waiting{background:#f3f4f6;border-color:#e5e7eb;color:var(--sub)}
+  .live-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pdot 2s infinite}
+  .live-pill.waiting .live-dot{animation:none}
+  @keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}
 
-  body {
-    font-family: var(--sans);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    max-width: 430px;
-    margin: 0 auto;
-    padding: 20px 16px 40px;
-    overflow-x: hidden;
-  }
+  /* Content */
+  .content{padding:20px}
 
-  /* ── Header ── */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 0 24px;
-  }
-  .logo {
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: var(--text);
-  }
-  .logo span { color: var(--red); }
-  .live-dot {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.5px;
-  }
-  .dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-    animation: blink 2s ease-in-out infinite;
-  }
-  .dot.offline { background: var(--muted); box-shadow: none; animation: none; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  /* Alert Banner */
+  .alert-banner{border-radius:16px;padding:16px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;background:var(--green-soft);border:1.5px solid #bbf7d0;transition:all 0.35s cubic-bezier(0.4,0,0.2,1)}
+  .alert-banner.triggered{background:var(--red-soft);border-color:#fca5a5;animation:bshake 0.5s ease}
+  @keyframes bshake{0%,100%{transform:translateX(0)}15%{transform:translateX(-5px)}30%{transform:translateX(5px)}45%{transform:translateX(-3px)}60%{transform:translateX(3px)}}
+  .banner-icon{font-size:26px;flex-shrink:0}
+  .banner-title{font-size:15px;font-weight:700}
+  .banner-sub{font-size:12px;color:var(--sub);margin-top:2px}
 
-  /* ── Status Banner ── */
-  .status-banner {
-    border-radius: 14px;
-    padding: 14px 18px;
-    margin-bottom: 16px;
-    border: 1px solid var(--border);
-    background: var(--card);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: all 0.3s;
-  }
-  .status-banner.alert {
-    background: var(--red-dim);
-    border-color: var(--red);
-    animation: shake 0.4s ease;
-  }
-  @keyframes shake {
-    0%,100%{transform:translateX(0)}
-    20%{transform:translateX(-6px)}
-    40%{transform:translateX(6px)}
-    60%{transform:translateX(-4px)}
-    80%{transform:translateX(4px)}
-  }
-  .status-icon { font-size: 22px; }
-  .status-text { flex:1; }
-  .status-title { font-size: 14px; font-weight: 700; }
-  .status-sub   { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top:2px; }
+  /* Vitals */
+  .vitals{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  .vital{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 16px 14px;position:relative;overflow:hidden}
+  .vital-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0}
+  .vital.hr   .vital-accent{background:linear-gradient(90deg,var(--red),#ff6b81)}
+  .vital.temp .vital-accent{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+  .vital-label{font-size:11px;font-weight:600;color:var(--sub);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px}
+  .vital-num{font-size:46px;font-weight:800;letter-spacing:-3px;line-height:1;margin-bottom:4px}
+  .vital.hr   .vital-num{color:var(--red)}
+  .vital.temp .vital-num{color:var(--amber)}
+  .vital-unit{font-size:12px;font-weight:500;color:var(--sub)}
 
-  /* ── Vitals Grid ── */
-  .vitals {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  .vital-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px;
-    position: relative;
-    overflow: hidden;
-  }
-  .vital-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-  }
-  .vital-card.hr::before   { background: var(--red); }
-  .vital-card.temp::before { background: var(--amber); }
+  /* Info Cards */
+  .info-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:12px}
+  .info-label{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+  .info-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .info-val{font-size:13px;font-weight:600;color:var(--text);word-break:break-all;line-height:1.5}
+  .info-val.active{color:var(--blue)}
+  .info-val.muted{color:var(--sub);font-weight:400}
+  .gps-badge{flex-shrink:0;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:var(--blue-soft);color:var(--blue);border:1px solid #bfdbfe;white-space:nowrap}
+  .gps-badge.waiting{background:#f3f4f6;color:var(--sub);border-color:#e5e7eb}
 
-  .vital-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-  .vital-value {
-    font-size: 42px;
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -2px;
-  }
-  .vital-card.hr   .vital-value { color: var(--red); }
-  .vital-card.temp .vital-value { color: var(--amber); }
-  .vital-unit {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
+  /* How it works note */
+  .note{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:11px 14px;margin-bottom:14px;font-size:12px;color:#92400e;line-height:1.5}
+  .note strong{display:block;margin-bottom:3px;font-size:12px}
 
-  /* ── Info Cards ── */
-  .info-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
-  }
-  .info-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .info-value {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    word-break: break-all;
-    line-height: 1.4;
-  }
-  .info-value.gps-active { color: var(--green); }
-  .info-value.gps-wait   { color: var(--muted); }
+  /* SOS */
+  .sos-btn{width:100%;padding:20px;background:var(--red);color:#fff;border:none;border-radius:16px;font-family:var(--font);font-size:18px;font-weight:800;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(239,35,60,0.35);transition:transform 0.1s,opacity 0.2s;position:relative;overflow:hidden;margin-bottom:8px}
+  .sos-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.12) 0%,transparent 100%)}
+  .sos-btn:active{transform:scale(0.97)}
+  .sos-btn.loading{opacity:0.65;pointer-events:none}
+  .sos-hint{text-align:center;font-size:11px;color:var(--sub);margin-bottom:14px}
 
-  /* ── SOS Button ── */
-  .sos-wrap {
-    margin: 18px 0 10px;
-    position: relative;
-  }
-  .sos-btn {
-    width: 100%;
-    padding: 22px;
-    background: var(--red);
-    color: #fff;
-    border: none;
-    border-radius: 16px;
-    font-family: var(--sans);
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.1s, box-shadow 0.2s;
-    box-shadow: 0 8px 32px #ff2d5540, 0 2px 8px #ff2d5520;
-  }
-  .sos-btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, #ffffff18 0%, transparent 60%);
-  }
-  .sos-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px #ff2d5530; }
-  .sos-btn.sending { opacity: 0.7; pointer-events: none; }
-  .sos-hint {
-    text-align: center;
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 8px;
-    letter-spacing: 0.5px;
-  }
+  /* Clear */
+  .clear-btn{width:100%;padding:13px;background:transparent;color:var(--sub);border:1.5px solid var(--border);border-radius:12px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;margin-bottom:18px}
+  .clear-btn:active{background:var(--bg)}
 
-  /* ── Clear Button ── */
-  .clear-btn {
-    width: 100%;
-    padding: 14px;
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    font-family: var(--sans);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-bottom: 16px;
-  }
-  .clear-btn:active { background: var(--border); }
+  /* Sync */
+  .sync-row{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--sub);margin-bottom:18px}
 
-  /* ── Log ── */
-  .log-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  .log-title {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-  .log-count {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    background: var(--border);
-    padding: 2px 8px;
-    border-radius: 20px;
-  }
-  .log-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-  .log-list::-webkit-scrollbar { width: 3px; }
-  .log-list::-webkit-scrollbar-track { background: transparent; }
-  .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius:3px; }
-  .log-item {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 9px 12px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    animation: slideIn 0.3s ease;
-  }
-  @keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-  .log-time {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    white-space: nowrap;
-    padding-top: 1px;
-  }
-  .log-msg { font-size: 12px; font-weight: 600; flex:1; line-height:1.3; }
-  .log-msg.ok     { color: var(--green); }
-  .log-msg.warn   { color: var(--red); }
-  .log-msg.info   { color: var(--text); }
+  /* Log */
+  .log-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  .log-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .log-head-title{font-size:13px;font-weight:700}
+  .log-badge{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;color:var(--sub)}
+  .log-body{max-height:220px;overflow-y:auto;padding:6px 0}
+  .log-body::-webkit-scrollbar{width:3px}
+  .log-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  .log-entry{display:flex;align-items:flex-start;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);animation:fslide 0.25s ease}
+  .log-entry:last-child{border-bottom:none}
+  @keyframes fslide{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+  .log-time{font-size:10px;color:var(--sub);white-space:nowrap;padding-top:2px;font-weight:500}
+  .log-text{font-size:12px;font-weight:600;flex:1;line-height:1.4}
+  .log-text.ok  {color:var(--green)}
+  .log-text.warn{color:var(--red)}
+  .log-text.info{color:var(--text)}
+  .log-empty{padding:24px 16px;text-align:center;font-size:12px;color:var(--sub)}
 
-  /* ── Timestamp ── */
-  .last-update {
-    text-align: center;
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    margin: 12px 0 6px;
-    letter-spacing: 0.5px;
-  }
-
-  /* ── Toast ── */
-  .toast {
-    position: fixed;
-    bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 40px;
-    padding: 12px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
-    z-index: 999;
-    box-shadow: 0 8px 32px #00000080;
-  }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-  .toast.success { border-color: var(--green); color: var(--green); }
-  .toast.error   { border-color: var(--red);   color: var(--red); }
+  /* Toast */
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(60px);background:var(--text);color:#fff;padding:11px 20px;border-radius:40px;font-size:13px;font-weight:600;white-space:nowrap;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.2);pointer-events:none}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast.ok {background:var(--green)}
+  .toast.err{background:var(--red)}
 </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <div class="logo">Safe<span>Guard</span></div>
-  <div class="live-dot">
-    <div class="dot" id="liveDot"></div>
-    <span id="liveLabel">LIVE</span>
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🛡️</div>
+    <div class="brand-name">Safe<span>Guard</span></div>
+  </div>
+  <div class="live-pill waiting" id="livePill">
+    <div class="live-dot"></div>
+    <span id="liveText">Connecting</span>
   </div>
 </div>
 
-<!-- Status Banner -->
-<div class="status-banner" id="statusBanner">
-  <div class="status-icon" id="statusIcon">🟢</div>
-  <div class="status-text">
-    <div class="status-title" id="statusTitle">All Systems Normal</div>
-    <div class="status-sub"  id="statusSub">Monitoring active</div>
+<div class="content">
+
+  <div class="alert-banner" id="alertBanner">
+    <div class="banner-icon" id="bannerIcon">✅</div>
+    <div>
+      <div class="banner-title" id="bannerTitle">All Systems Normal</div>
+      <div class="banner-sub"  id="bannerSub">Device is monitoring</div>
+    </div>
   </div>
-</div>
 
-<!-- Vitals -->
-<div class="vitals">
-  <div class="vital-card hr">
-    <div class="vital-label">❤ Heart Rate</div>
-    <div class="vital-value" id="hrVal">--</div>
-    <div class="vital-unit">BPM</div>
+  <div class="vitals">
+    <div class="vital hr">
+      <div class="vital-accent"></div>
+      <div class="vital-label">❤ Heart Rate</div>
+      <div class="vital-num" id="hrVal">--</div>
+      <div class="vital-unit">beats / min</div>
+    </div>
+    <div class="vital temp">
+      <div class="vital-accent"></div>
+      <div class="vital-label">◈ Temperature</div>
+      <div class="vital-num" id="tempVal">--</div>
+      <div class="vital-unit">°C</div>
+    </div>
   </div>
-  <div class="vital-card temp">
-    <div class="vital-label">◈ Temperature</div>
-    <div class="vital-value" id="tempVal">--</div>
-    <div class="vital-unit">°C</div>
+
+  <div class="info-card">
+    <div class="info-label">◎ GPS Location</div>
+    <div class="info-row">
+      <div class="info-val muted" id="gpsVal">Requesting location...</div>
+      <div class="gps-badge waiting" id="gpsBadge">Waiting</div>
+    </div>
   </div>
+
+  <button class="sos-btn" id="sosBtn" onclick="triggerSOS()">🆘 SOS EMERGENCY</button>
+  <div class="sos-hint">ESP32 will send SMS to emergency contact instantly</div>
+
+  <button class="clear-btn" onclick="clearAlert()">✓ &nbsp;Clear Alert</button>
+
+  <div class="sync-row">🔄 <span id="syncTime">Waiting for device data...</span></div>
+
+  <div class="log-wrap">
+    <div class="log-head">
+      <div class="log-head-title">Activity Log</div>
+      <div class="log-badge" id="logBadge">0 events</div>
+    </div>
+    <div class="log-body" id="logBody">
+      <div class="log-empty">No activity yet</div>
+    </div>
+  </div>
+
 </div>
 
-<!-- GPS -->
-<div class="info-card">
-  <div class="info-label">◎ Location</div>
-  <div class="info-value gps-wait" id="gpsVal">Waiting for GPS...</div>
-</div>
-
-<!-- SOS -->
-<div class="sos-wrap">
-  <button class="sos-btn" id="sosBtn" onclick="triggerSOS()">🆘 &nbsp;SOS EMERGENCY</button>
-  <div class="sos-hint">Hold to send emergency alert + SMS</div>
-</div>
-
-<!-- Clear -->
-<button class="clear-btn" onclick="clearAlert()">✓ &nbsp;Clear Alert</button>
-
-<!-- Last update -->
-<div class="last-update" id="lastUpdate">Waiting for data...</div>
-
-<!-- Log -->
-<div class="log-header">
-  <div class="log-title">Activity Log</div>
-  <div class="log-count" id="logCount">0</div>
-</div>
-<div class="log-list" id="logList"></div>
-
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script type="module">
 import { initializeApp }                  from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-// ── Firebase ──────────────────────────────────────────────
 const firebaseConfig = {
   apiKey:      "AIzaSyAfIZ0xR3pzZz_uXHbTSLL_cm1S6KjTwxc",
   authDomain:  "women-safety-device-89b8e.firebaseapp.com",
@@ -386,169 +193,120 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
-// ── Twilio ────────────────────────────────────────────────
-const TW_SID   = "ACcc036f70be02d574426f134d8d5c0afd";
-const TW_TOKEN = "32bd44819f4912bfd4a7802b59ec3e12";
-const TW_FROM  = "+19789513308";
-const TW_TO    = "+919360856505";
+let totalEvents = 0;
 
-// ── State ─────────────────────────────────────────────────
-let curLat=null, curLng=null, curHR="--", curTemp="--";
-const smsCooldown={};
-const SMS_CD=30000;
-let logCount=0;
-
-// ── Toast ─────────────────────────────────────────────────
-function toast(msg, type="info") {
+// ── Toast ──────────────────────────────────────────────────
+function showToast(msg, type="") {
   const el = document.getElementById("toast");
-  el.textContent = msg;
-  el.className = "toast show " + type;
-  setTimeout(()=>el.className="toast", 3000);
+  el.textContent = msg; el.className = "toast show "+type;
+  setTimeout(() => el.className="toast", 3200);
 }
 
-// ── Log ───────────────────────────────────────────────────
+// ── Log ────────────────────────────────────────────────────
 function addLog(msg, type="info") {
-  const list = document.getElementById("logList");
-  const now  = new Date().toLocaleTimeString("en-IN",{hour12:false,hour:"2-digit",minute:"2-digit",second:"2-digit"});
-  const item = document.createElement("div");
-  item.className = "log-item";
-  item.innerHTML = `<div class="log-time">${now}</div><div class="log-msg ${type}">${msg}</div>`;
-  list.prepend(item);
-  while(list.children.length > 25) list.removeChild(list.lastChild);
-  logCount++;
-  document.getElementById("logCount").textContent = logCount;
+  const body = document.getElementById("logBody");
+  const empty = body.querySelector(".log-empty");
+  if (empty) empty.remove();
+  const t = new Date().toLocaleTimeString("en-IN",{hour12:false,hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const el = document.createElement("div");
+  el.className = "log-entry";
+  el.innerHTML = `<div class="log-time">${t}</div><div class="log-text ${type}">${msg}</div>`;
+  body.prepend(el);
+  while (body.children.length > 30) body.removeChild(body.lastChild);
+  totalEvents++;
+  document.getElementById("logBadge").textContent = totalEvents+(totalEvents===1?" event":" events");
 }
 
-// ── Twilio SMS via XMLHttpRequest ─────────────────────────
-function sendTwilioSMS(alertType) {
-  const now = Date.now();
-  if (smsCooldown[alertType] && now - smsCooldown[alertType] < SMS_CD) {
-    addLog("SMS cooldown active", "info"); return;
+// ── GPS — push to Firebase so ESP32 includes in SMS ────────
+function startGPS() {
+  if (!navigator.geolocation) {
+    document.getElementById("gpsVal").textContent = "GPS not supported";
+    return;
   }
-  smsCooldown[alertType] = now;
-
-  let msg = "";
-  if      (alertType==="sos")        msg = "SOS EMERGENCY! ";
-  else if (alertType==="threat")     msg = "THREAT DETECTED! Someone approaching! ";
-  else if (alertType==="tamper")     msg = "TAMPER ALERT! Device removed! ";
-  else if (alertType==="tempAlert")  msg = "HIGH TEMPERATURE ALERT! ";
-  else if (alertType==="heartAlert") msg = "ABNORMAL HEART RATE! ";
-  msg += `HR: ${curHR} BPM, Temp: ${curTemp}C`;
-  if (curLat && curLng) msg += `. Location: https://maps.google.com/?q=${curLat},${curLng}`;
-
-  const body = new URLSearchParams({ To: TW_TO, From: TW_FROM, Body: msg });
-  const creds = btoa(`${TW_SID}:${TW_TOKEN}`);
-  const url   = `https://api.twilio.com/2010-04-01/Accounts/${TW_SID}/Messages.json`;
-
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", url, true);
-  xhr.setRequestHeader("Content-Type",  "application/x-www-form-urlencoded");
-  xhr.setRequestHeader("Authorization", "Basic " + creds);
-
-  xhr.onload = () => {
-    if (xhr.status === 201) {
-      addLog("📱 SMS sent → " + TW_TO, "ok");
-      toast("📱 SMS sent!", "success");
-    } else {
-      let err = "Error " + xhr.status;
-      try { err = JSON.parse(xhr.responseText).message || err; } catch(e){}
-      addLog("❌ SMS failed: " + err, "warn");
-      toast("❌ " + err, "error");
-    }
-  };
-  xhr.onerror = () => { addLog("❌ SMS network error", "warn"); };
-  xhr.send(body.toString());
+  function onPos(pos) {
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    document.getElementById("gpsVal").textContent = `${lat}, ${lng}`;
+    document.getElementById("gpsVal").className   = "info-val active";
+    document.getElementById("gpsBadge").textContent = "Active";
+    document.getElementById("gpsBadge").className   = "gps-badge";
+    set(ref(db, "/location"), { latitude:parseFloat(lat), longitude:parseFloat(lng), updatedAt:Date.now() });
+  }
+  function onErr() {
+    document.getElementById("gpsVal").textContent = "Allow location → reload page";
+    document.getElementById("gpsVal").className   = "info-val muted";
+  }
+  navigator.geolocation.getCurrentPosition(onPos, onErr, {enableHighAccuracy:true,timeout:10000});
+  navigator.geolocation.watchPosition(onPos, onErr, {enableHighAccuracy:true,maximumAge:5000});
 }
 
-// ── GPS ───────────────────────────────────────────────────
-navigator.geolocation?.watchPosition(
-  pos => {
-    curLat = pos.coords.latitude.toFixed(6);
-    curLng = pos.coords.longitude.toFixed(6);
-    const el = document.getElementById("gpsVal");
-    el.textContent = `${curLat}, ${curLng}`;
-    el.className   = "info-value gps-active";
-    set(ref(db, "/location"), {
-      latitude:  parseFloat(curLat),
-      longitude: parseFloat(curLng),
-      updatedAt: Date.now(),
-    });
-  },
-  err => {
-    document.getElementById("gpsVal").textContent = "GPS denied — " + err.message;
-  },
-  { enableHighAccuracy:true, timeout:15000, maximumAge:5000 }
-);
-
-// ── Sensor listeners ──────────────────────────────────────
-onValue(ref(db, "/sensor/heartrate"), snap => {
+// ── Sensor data ────────────────────────────────────────────
+onValue(ref(db,"/sensor/heartrate"), snap => {
   const v = snap.val();
-  curHR = v > 0 ? v : "--";
-  document.getElementById("hrVal").textContent = curHR;
-  document.getElementById("lastUpdate").textContent =
-    "Last sync " + new Date().toLocaleTimeString("en-IN",{hour12:false});
-  document.getElementById("liveDot").className = "dot";
-  document.getElementById("liveLabel").textContent = "LIVE";
+  document.getElementById("hrVal").textContent = v > 0 ? v : "--";
+  document.getElementById("syncTime").textContent = "Last sync: "+new Date().toLocaleTimeString("en-IN",{hour12:false});
+  document.getElementById("livePill").className = "live-pill";
+  document.getElementById("liveText").textContent = "Live";
+});
+onValue(ref(db,"/sensor/temperature"), snap => {
+  const v = snap.val();
+  document.getElementById("tempVal").textContent = v > 0 ? parseFloat(v).toFixed(1) : "--";
 });
 
-onValue(ref(db, "/sensor/temperature"), snap => {
-  const v = snap.val();
-  curTemp = v > 0 ? parseFloat(v).toFixed(1) : "--";
-  document.getElementById("tempVal").textContent = curTemp;
-});
-
-// ── Alert listeners ───────────────────────────────────────
-const alertMap = {
-  sos:        { icon:"🚨", title:"SOS ALERT",           sub:"Emergency triggered" },
-  threat:     { icon:"⚠️",  title:"THREAT DETECTED",     sub:"Sudden approach detected" },
-  tamper:     { icon:"🔓", title:"TAMPER ALERT",         sub:"Device may be removed" },
-  tempAlert:  { icon:"🌡️", title:"HIGH TEMPERATURE",     sub:"Body temp dangerously high" },
-  heartAlert: { icon:"💓", title:"ABNORMAL HEART RATE",  sub:"HR outside safe range" },
+// ── Alert listeners — ESP32 writes these, we just show them ─
+const ALERTS = {
+  sos:        {icon:"🚨",title:"SOS ALERT",          sub:"Emergency button pressed"},
+  threat:     {icon:"⚠️", title:"THREAT DETECTED",    sub:"Sudden approach detected"},
+  tamper:     {icon:"🔓",title:"TAMPER ALERT",        sub:"Device may be removed"},
+  tempAlert:  {icon:"🌡", title:"HIGH TEMPERATURE",   sub:"Body temp dangerously high"},
+  heartAlert: {icon:"💓",title:"ABNORMAL HEART RATE", sub:"HR outside safe range"},
 };
-
-Object.keys(alertMap).forEach(key => {
-  onValue(ref(db, "/alerts/" + key), snap => {
+Object.keys(ALERTS).forEach(key => {
+  onValue(ref(db,"/alerts/"+key), snap => {
     if (snap.val() !== true) return;
-    const a = alertMap[key];
-    const banner = document.getElementById("statusBanner");
-    banner.className = "status-banner alert";
-    document.getElementById("statusIcon").textContent  = a.icon;
-    document.getElementById("statusTitle").textContent = a.title;
-    document.getElementById("statusSub").textContent   = a.sub;
-    addLog(a.icon + " " + a.title, "warn");
+    const a = ALERTS[key];
+    document.getElementById("alertBanner").className = "alert-banner triggered";
+    document.getElementById("bannerIcon").textContent  = a.icon;
+    document.getElementById("bannerTitle").textContent = a.title;
+    document.getElementById("bannerSub").textContent   = a.sub;
+    addLog(a.icon+" "+a.title+" — ESP32 sending SMS", "warn");
     if (navigator.vibrate) navigator.vibrate([300,100,300,100,600]);
-    sendTwilioSMS(key);
   });
 });
 
-// ── SOS Button ────────────────────────────────────────────
+// ── SOS button — writes to Firebase, ESP32 picks it up & sends SMS
 window.triggerSOS = function() {
-  if (!confirm("Send SOS Emergency Alert?")) return;
+  if (!confirm("Send SOS Emergency Alert?\nESP32 will SMS +919360856505 immediately.")) return;
   const btn = document.getElementById("sosBtn");
-  btn.textContent = "⏳  Sending...";
-  btn.classList.add("sending");
-  set(ref(db, "/alerts/sos"), true);
-  sendTwilioSMS("sos");
+  btn.innerHTML = "⏳ &nbsp;Sending...";
+  btn.classList.add("loading");
+
+  // Write to Firebase — ESP32 reads this in its loop and sends SMS
+  set(ref(db,"/alerts/sos"), true);
+  set(ref(db,"/alerts/alertType"), "SOS");
+  set(ref(db,"/alerts/timestamp"), Math.floor(Date.now()/1000));
+
+  addLog("🚨 SOS triggered — ESP32 will send SMS", "warn");
+  showToast("🚨 Alert sent to ESP32", "ok");
+
   setTimeout(() => {
-    btn.innerHTML = "🆘 &nbsp;SOS EMERGENCY";
-    btn.classList.remove("sending");
-  }, 3000);
+    btn.innerHTML = "🆘 SOS EMERGENCY";
+    btn.classList.remove("loading");
+  }, 3500);
 };
 
-// ── Clear ─────────────────────────────────────────────────
+// ── Clear ──────────────────────────────────────────────────
 window.clearAlert = function() {
-  ["sos","threat","tamper","tempAlert","heartAlert"].forEach(k =>
-    set(ref(db, "/alerts/" + k), false)
-  );
-  const banner = document.getElementById("statusBanner");
-  banner.className = "status-banner";
-  document.getElementById("statusIcon").textContent  = "🟢";
-  document.getElementById("statusTitle").textContent = "All Systems Normal";
-  document.getElementById("statusSub").textContent   = "Monitoring active";
+  Object.keys(ALERTS).forEach(k => set(ref(db,"/alerts/"+k), false));
+  document.getElementById("alertBanner").className = "alert-banner";
+  document.getElementById("bannerIcon").textContent  = "✅";
+  document.getElementById("bannerTitle").textContent = "All Systems Normal";
+  document.getElementById("bannerSub").textContent   = "Device is monitoring";
   addLog("✓ Alert cleared", "ok");
-  toast("Alert cleared", "success");
+  showToast("Alert cleared", "ok");
 };
 
+startGPS();
 addLog("Dashboard connected", "ok");
 </script>
 </body>
